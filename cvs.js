@@ -25,27 +25,27 @@ function initRepo() {
 
 // Stage a file
 function addFile(filename) {
-    try{
-    if (!fs.existsSync(CVS_DIR)) {
-        console.log("Repository is not initialized");
-        return;
-    }
+    try {
+        if (!fs.existsSync(CVS_DIR)) {
+            console.log("Repository is not initialized");
+            return;
+        }
 
-    if (!fs.existsSync(filename)) {
-        console.log("File does not exist.");
-        return;
-    }
-    
+        if (!fs.existsSync(filename)) {
+            console.log("File does not exist.");
+            return;
+        }
 
-    const content = fs.readFileSync(filename, "utf8");
-    //add in current branch
-    const targetBranch = fs.readFileSync(path.join(CVS_DIR, "HEAD"), "utf8").trim();
-    const branchPath = path.join(CVS_DIR, "branches", `${targetBranch}.json`);
-    const index={[filename]:content};
-    fs.writeFileSync(branchPath, JSON.stringify(index, null, 2));
-    console.log(`Staged ${filename}.`);
-    }catch(err){
-console.log("No Filename");
+
+        const content = fs.readFileSync(filename, "utf8");
+        //add in current branch
+        const targetBranch = fs.readFileSync(path.join(CVS_DIR, "HEAD"), "utf8").trim();
+        const branchPath = path.join(CVS_DIR, "branches", `${targetBranch}.json`);
+        const index = { [filename]: content };
+        fs.writeFileSync(branchPath, JSON.stringify(index, null, 2));
+        console.log(`Staged ${filename}.`);
+    } catch (err) {
+        console.log("No Filename");
 
     }
 }
@@ -201,19 +201,65 @@ function switchBranch(branchName) {
             console.log("Repository is not initialized");
             return;
         }
+
         const branchPath = path.join(CVS_DIR, "branches", `${branchName}.json`);
         if (!fs.existsSync(branchPath)) {
             console.log("Branch does not exist.");
             return;
         }
 
+        // Get current branch name
+        const currentBranch = fs.readFileSync(path.join(CVS_DIR, "HEAD"), "utf8").trim();
+
+        // Save current state before switching (if there's an active branch)
+        if (currentBranch) {
+            const currentFiles = fs.readdirSync(".").filter(file => (
+                !file.startsWith(".") && fs.lstatSync(file).isFile() && file !== "cvs.js"
+            ));
+
+            // Save current working directory state in a separate file
+            fs.writeFileSync(path.join(CVS_DIR, "branches", `${currentBranch}-state.json`), JSON.stringify(currentFiles, null, 2));
+        }
+
+        // Clear current working directory (excluding CVS system files & `cvs.js`)
+        fs.readdirSync(".").forEach(file => {
+            if (!file.startsWith(".") && fs.lstatSync(file).isFile() && file !== "cvs.js") {
+                fs.unlinkSync(file);
+            }
+        });
+
+        // Update HEAD to new branch
         fs.writeFileSync(path.join(CVS_DIR, "HEAD"), branchName);
         console.log(`Switched to branch '${branchName}'.`);
+
+        // Restore last saved state (if any)
+        const savedStatePath = path.join(CVS_DIR, "branches", `${branchName}-state.json`);
+        if (fs.existsSync(savedStatePath)) {
+            const savedFiles = JSON.parse(fs.readFileSync(savedStatePath, "utf8"));
+            savedFiles.forEach(file => {
+                const latestCommitPath = path.join(CVS_DIR, "commits");
+                const commitHistoryPath = path.join(CVS_DIR, "branches", `${branchName}-history.json`);
+
+                if (fs.existsSync(commitHistoryPath)) {
+                    const commitHistory = JSON.parse(fs.readFileSync(commitHistoryPath, "utf8"));
+                    if (commitHistory.length > 0) {
+                        const latestCommit = commitHistory[commitHistory.length - 1];
+                        const filePath = path.join(latestCommitPath, latestCommit, file);
+
+                        if (fs.existsSync(filePath)) {
+                            const content = fs.readFileSync(filePath, "utf8");
+                            fs.writeFileSync(file, content);
+                        }
+                    }
+                }
+            });
+        }
+
     } catch (err) {
         console.log("No Branchname");
-
     }
 }
+
 //Merging Branches
 function mergeBranch(sourceBranch) {
     try {
