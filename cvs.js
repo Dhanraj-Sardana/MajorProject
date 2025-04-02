@@ -25,6 +25,7 @@ function initRepo() {
 
 // Stage a file
 function addFile(filename) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -51,10 +52,15 @@ function addFile(filename) {
     //..............
     fs.writeFileSync(branchPath, JSON.stringify(index, null, 2));
     console.log(`Staged ${filename}.`);
+    }catch(err){
+console.log("No Filename");
+
+    }
 }
 
 // Commit staged files
 function commit(message) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -91,6 +97,10 @@ function commit(message) {
     fs.writeFileSync(branchPath, JSON.stringify({}, null, 2));
 
     console.log(`Committed with ID ${commitHash}.`);
+    }catch(err){
+        console.log("No message");
+        
+            }
 }
 
 // View commit history
@@ -122,6 +132,8 @@ function logCommits() {
 
 // Restore a commit
 function checkout(commitId) {
+    
+    try {
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -140,9 +152,16 @@ function checkout(commitId) {
     });
 
     console.log(`Checked out commit ${commitId}.`);
+    }catch(err) {
+        if(!commitId){
+            console.log("No commit id");
+         
+        }
+    }
 }
 //create branch
 function createBranch(branchName) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -155,10 +174,15 @@ function createBranch(branchName) {
 
     fs.writeFileSync(branchPath, JSON.stringify([], null, 2));
     console.log(`Branch '${branchName}' created.`);
+    }catch(ERR){
+        console.log("NO Branchname");
+        
+    }
 }
 
 //Switch to a Branch
 function switchBranch(branchName) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -171,9 +195,14 @@ function switchBranch(branchName) {
 
     fs.writeFileSync(path.join(CVS_DIR, "HEAD"), branchName);
     console.log(`Switched to branch '${branchName}'.`);
+    }catch(err){
+        console.log("No Branchname");
+        
+            }
 }
 //Merging Branches
 function mergeBranch(sourceBranch) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -199,10 +228,15 @@ function mergeBranch(sourceBranch) {
 
     fs.writeFileSync(targetPath, JSON.stringify(targetCommits, null, 2));
     console.log(`Merged branch '${sourceBranch}' into '${targetBranch}'.`);
+    }catch(err){
+        console.log("No Sourcebranch");
+        
+    }
 }
 
 //push
 function push(remotePath) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -214,9 +248,14 @@ function push(remotePath) {
 
     fs.cpSync(CVS_DIR, remotePath, { recursive: true });
     console.log("Pushed changes to remote repository.");
+    }catch(err){
+        console.log("No RemotePath");
+        
+    }
 }
 //pull
 function pull(remotePath) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -228,14 +267,16 @@ function pull(remotePath) {
 
     fs.cpSync(remotePath, CVS_DIR, { recursive: true });
     console.log("Pulled changes from remote repository.");
+    }
+    catch(err){
+        console.log("No RemotePath");
+        
+    }
 }
 
 //current branch
 function status(){
-    if (!fs.existsSync(CVS_DIR)) {
-        console.log("Repository is not initialized");
-        return;
-    }
+   
     if (!fs.existsSync(CVS_DIR)){
         console.log("No Repository  exists! so can not tell about branch");
     } else{
@@ -246,6 +287,7 @@ function status(){
 
 //Revert a Commit
 function revert(commitId) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -264,10 +306,15 @@ function revert(commitId) {
     });
 
     console.log(`Reverted to commit ${commitId}.`);
+    }catch(err){
+        console.log("No commmit ID");
+        
+    }
 }
 
 //Rewrite Commit History
 function rebase(sourceBranch, targetBranch) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -288,10 +335,16 @@ function rebase(sourceBranch, targetBranch) {
 
     fs.writeFileSync(targetPath, JSON.stringify(rebasedCommits, null, 2));
     console.log(`Rebased branch '${sourceBranch}' onto '${targetBranch}'.`);
+    }catch(err){
+        
+        console.log("No sourceBranch or targetBarnch ");
+        
+    }
 }
 
 //interactiveRebase
 function interactiveRebase(sourceBranch, targetBranch) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -343,6 +396,11 @@ function interactiveRebase(sourceBranch, targetBranch) {
     }
 
     processCommit(0);
+    }catch(err){
+        
+        console.log("No sourceBranch or targetBarnch ");
+        
+    }
 }
 
 //stash
