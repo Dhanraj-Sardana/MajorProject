@@ -61,6 +61,7 @@ function addFile(...filenames) {
 
 // Commit staged files
 function commit(message) {
+    try{
     if (!fs.existsSync(CVS_DIR)) {
         console.log("Repository is not initialized");
         return;
@@ -113,6 +114,9 @@ function commit(message) {
     fs.writeFileSync(branchPath, JSON.stringify({}, null, 2));
 
     console.log(`Committed with ID ${commitHash}.`);
+    }catch (err) {
+        console.log("Error in commiting :", err.message);
+    }
 }
 
 // View commit history
@@ -174,32 +178,47 @@ function checkout(commitId) {
 
         console.log(`Checked out commit ${commitId}.`);
     } catch (err) {
-        if (!commitId) {
-            console.log("No commit id");
-
-        }
+        console.log("Error in restoring a commit :", err.message);
     }
 }
 //create branch
 function createBranch(branchName) {
     try {
         if (!fs.existsSync(CVS_DIR)) {
-            console.log("Repository is not initialized");
+            console.log("Repository is not initialized.");
             return;
         }
+
         const branchPath = path.join(CVS_DIR, "branches", `${branchName}.json`);
         if (fs.existsSync(branchPath)) {
             console.log("Branch already exists.");
             return;
         }
 
-        fs.writeFileSync(branchPath, JSON.stringify([], null, 2));
-        console.log(`Branch '${branchName}' created.`);
-    } catch (ERR) {
-        console.log("NO Branchname");
+        const currentBranch = fs.readFileSync(path.join(CVS_DIR, "HEAD"), "utf8").trim();
+        const currentHistoryPath = path.join(CVS_DIR, "branches", `${currentBranch}-history.json`);
+        const newHistoryPath = path.join(CVS_DIR, "branches", `${branchName}-history.json`);
 
+        let latestCommit = null;
+        if (fs.existsSync(currentHistoryPath)) {
+            const history = JSON.parse(fs.readFileSync(currentHistoryPath, "utf8"));
+            if (history.length > 0) {
+                latestCommit = history[history.length - 1];
+            }
+        }
+
+        fs.writeFileSync(branchPath, JSON.stringify([], null, 2));
+        fs.writeFileSync(newHistoryPath, JSON.stringify(latestCommit ? [latestCommit] : [], null, 2));
+
+        console.log(`Branch '${branchName}' created.`);
+        if (latestCommit) {
+            console.log(`Copied latest commit '${latestCommit}' from '${currentBranch}' branch.`);
+        }
+    } catch (err) {
+        console.log("Error creating branch:", err.message);
     }
 }
+
 
 //Switch to a Branch
 function switchBranch(branchName) {
@@ -263,7 +282,7 @@ function switchBranch(branchName) {
         }
 
     } catch (err) {
-        console.log("No Branchname");
+        console.log("Error in switching branch:", err.message);
     }
 }
 
@@ -391,8 +410,7 @@ function push(remotePath) {
         fs.cpSync(CVS_DIR, remotePath, { recursive: true });
         console.log("Pushed changes to remote repository.");
     } catch (err) {
-        console.log("No RemotePath");
-
+        console.log("Error pushing:", err.message);
     }
 }
 //Clone
@@ -411,9 +429,13 @@ function clone(remotePath) {
         console.log("cloned the changes from remote repository.");
     }
     catch (err) {
-        console.log("No RemotePath");
-
+        console.log("Error cloning:", err.message);
     }
+}
+
+//Pull
+function pull(remotePath){
+    //CODE TO BE DONE
 }
 
 //current branch
@@ -449,8 +471,7 @@ function revert(commitId) {
 
         console.log(`Reverted to commit ${commitId}.`);
     } catch (err) {
-        console.log("No commmit ID");
-
+        console.log("Error in revert:", err.message);
     }
 }
 
@@ -478,9 +499,7 @@ function rebase(sourceBranch, targetBranch) {
         fs.writeFileSync(targetPath, JSON.stringify(rebasedCommits, null, 2));
         console.log(`Rebased branch '${sourceBranch}' onto '${targetBranch}'.`);
     } catch (err) {
-
-        console.log("No sourceBranch or targetBarnch ");
-
+        console.log("Error in rebase:", err.message);
     }
 }
 
@@ -539,9 +558,7 @@ function interactiveRebase(sourceBranch, targetBranch) {
 
         processCommit(0);
     } catch (err) {
-
-        console.log("No sourceBranch or targetBarnch ");
-
+        console.log("Error in interactiveRebase:", err.message);
     }
 }
 
@@ -620,6 +637,9 @@ switch (args[0]) {
         break;
     case "push":
         push(args[1]);
+        break;
+    case "pull":
+        pull(args[1])    
         break;
     case "clone":
         clone(args[1]);
