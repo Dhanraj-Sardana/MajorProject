@@ -43,7 +43,7 @@ function addFile(...filenames) {
         filenames.forEach(filename => {
             if (fs.existsSync(filename)) {
                 const content = fs.readFileSync(filename, "utf8");
-                index[filename] = content;
+                index={[filename] : content};
                 console.log(`Staged ${filename}.`);
             } else {
                 console.log(`File '${filename}' does not exist.`);
@@ -407,6 +407,7 @@ function push(remotePath) {
             return;
         }
 
+        
         fs.cpSync(CVS_DIR, path.join(remotePath,CVS_DIR), { recursive: true });
         console.log("Pushed changes to remote repository.");
     } catch (err) {
