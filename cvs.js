@@ -395,8 +395,8 @@ function push(remotePath) {
 
     }
 }
-//pull
-function pull(remotePath) {
+//Clone
+function clone(remotePath) {
     try {
         if (!fs.existsSync(CVS_DIR)) {
             console.log("Repository is not initialized");
@@ -406,9 +406,9 @@ function pull(remotePath) {
             console.log("Remote repository does not exist.");
             return;
         }
-
+           
         fs.cpSync(remotePath, CVS_DIR, { recursive: true });
-        console.log("Pulled changes from remote repository.");
+        console.log("cloned the changes from remote repository.");
     }
     catch (err) {
         console.log("No RemotePath");
@@ -621,8 +621,8 @@ switch (args[0]) {
     case "push":
         push(args[1]);
         break;
-    case "pull":
-        pull(args[1]);
+    case "clone":
+        clone(args[1]);
         break;
     case "status":
         status();
