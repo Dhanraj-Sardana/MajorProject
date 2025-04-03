@@ -407,7 +407,7 @@ function push(remotePath) {
             return;
         }
 
-        fs.cpSync(CVS_DIR, remotePath, { recursive: true });
+        fs.cpSync(CVS_DIR, path.join(remotePath,CVS_DIR), { recursive: true });
         console.log("Pushed changes to remote repository.");
     } catch (err) {
         console.log("Error pushing:", err.message);
@@ -416,27 +416,203 @@ function push(remotePath) {
 //Clone
 function clone(remotePath) {
     try {
-        if (!fs.existsSync(CVS_DIR)) {
-            console.log("Repository is not initialized");
-            return;
-        }
         if (!fs.existsSync(remotePath)) {
             console.log("Remote repository does not exist.");
             return;
         }
-           
-        fs.cpSync(remotePath, CVS_DIR, { recursive: true });
-        console.log("cloned the changes from remote repository.");
-    }
-    catch (err) {
+
+        if (!fs.existsSync(CVS_DIR)) {
+            fs.mkdirSync(CVS_DIR);
+        }
+
+        // Copy .mycvs directory
+        fs.cpSync(path.join(remotePath, CVS_DIR), CVS_DIR, { recursive: true });
+        console.log("Cloned the .mycvs folder.");
+
+        // Identify the current branch
+        const headFilePath = path.join(CVS_DIR, "HEAD");
+        if (!fs.existsSync(headFilePath)) {
+            console.log("HEAD file not found. Cloning without branch-specific files.");
+            return;
+        }
+
+        const currentBranch = fs.readFileSync(headFilePath, "utf-8").trim();
+        console.log(`Current branch: ${currentBranch}`);
+
+        // Find the latest commit hash for the current branch
+        const branchHistoryPath = path.join(CVS_DIR, "branches", `${currentBranch}-history.json`);
+        if (!fs.existsSync(branchHistoryPath)) {
+            console.log(`No commit history found for branch: ${currentBranch}`);
+            return;
+        }
+
+        const branchHistory = JSON.parse(fs.readFileSync(branchHistoryPath, "utf-8"));
+        if (branchHistory.length === 0) {
+            console.log(`Branch ${currentBranch} has no commits.`);
+            return;
+        }
+
+        const latestCommitHash = branchHistory[branchHistory.length - 1]; // Get the latest commit
+        console.log(`Latest commit hash: ${latestCommitHash}`);
+
+        // Copy files from the latest commit OUTSIDE of .mycvs
+        const remoteCommitPath = path.join(remotePath, CVS_DIR, "commits", latestCommitHash);
+        let conflicts = [];
+
+        if (fs.existsSync(remoteCommitPath)) {
+            for (const file of fs.readdirSync(remoteCommitPath)) {
+                if (file === "message.txt") continue;  // Skip commit message file
+
+                const destFilePath = path.join(process.cwd(), file); // Place files in working directory
+                const srcFilePath = path.join(remoteCommitPath, file);
+
+                if (fs.existsSync(destFilePath)) {
+                    // Conflict detected, but we don't resolve it
+                    conflicts.push(file);
+                } else {
+                    fs.copyFileSync(srcFilePath, destFilePath);
+                    console.log(`Copied: ${file}`);
+                }
+            }
+
+            console.log("Cloned the latest commit files into the working directory.");
+        } else {
+            console.log("No files found for the latest commit.");
+        }
+
+        // Display conflict warning
+        if (conflicts.length > 0) {
+            console.log("\n Conflicts detected! The following files already exist in the working directory:");
+            conflicts.forEach(file => console.log(`   - ${file}`));
+            console.log("\nResolve conflicts manually before proceeding.");
+        }
+
+    } catch (err) {
         console.log("Error cloning:", err.message);
     }
 }
-
 //Pull
-function pull(remotePath){
-    //CODE TO BE DONE
+function pull(remoteRepoPath) {
+    try {
+        if (!fs.existsSync(CVS_DIR)) {
+            console.log("Repository is not initialized.");
+            return;
+        }
+
+        if (!fs.existsSync(remoteRepoPath)) {
+            console.log("Remote repository does not exist.");
+            return;
+        }
+
+        console.log("Fetching updates from remote repository...");
+        fetch(remoteRepoPath);
+
+        console.log("Merging fetched changes into the working directory...");
+
+        const localRemoteDir = path.join(CVS_DIR, "remote");
+        const localCommitsPath = path.join(localRemoteDir, "commits");
+        const localBranchesPath = path.join(localRemoteDir, "branches");
+
+        const localCommitsDest = path.join(CVS_DIR, "commits");
+        const localBranchesDest = path.join(CVS_DIR, "branches");
+
+        // Merge fetched commits
+        if (fs.existsSync(localCommitsPath)) {
+            fs.readdirSync(localCommitsPath).forEach(commitHash => {
+                const fetchedCommitPath = path.join(localCommitsPath, commitHash);
+                const localCommitPath = path.join(localCommitsDest, commitHash);
+
+                if (!fs.existsSync(localCommitPath)) {
+                    fs.mkdirSync(localCommitPath, { recursive: true });
+
+                    fs.readdirSync(fetchedCommitPath).forEach(file => {
+                        fs.copyFileSync(
+                            path.join(fetchedCommitPath, file),
+                            path.join(localCommitPath, file)
+                        );
+                    });
+                }
+            });
+        }
+
+        // Merge fetched branches
+        if (fs.existsSync(localBranchesPath)) {
+            fs.readdirSync(localBranchesPath).forEach(branchFile => {
+                const fetchedBranchFilePath = path.join(localBranchesPath, branchFile);
+                const localBranchFilePath = path.join(localBranchesDest, branchFile);
+
+                fs.copyFileSync(fetchedBranchFilePath, localBranchFilePath);
+            });
+        }
+
+        console.log("Pull successful. Latest changes merged into the local repository.");
+    } catch (err) {
+        console.error("Error pulling from remote repository:", err.message);
+    }
 }
+
+//fetch
+function fetch(remoteRepoPath) {
+    try {
+        if (!fs.existsSync(CVS_DIR)) {
+            console.log("Repository is not initialized.");
+            return;
+        }
+
+        if (!fs.existsSync(remoteRepoPath)) {
+            console.log("Remote repository does not exist.");
+            return;
+        }
+
+        const remoteBranchesPath = path.join(remoteRepoPath, "branches");
+        const remoteCommitsPath = path.join(remoteRepoPath, "commits");
+        const localRemoteDir = path.join(CVS_DIR, "remote");
+        const localCommitsPath = path.join(localRemoteDir, "commits");
+
+        // Ensure the "remote" directory exists
+        if (!fs.existsSync(localRemoteDir)) {
+            fs.mkdirSync(localRemoteDir, { recursive: true });
+        }
+
+        // Fetch branches
+        if (fs.existsSync(remoteBranchesPath)) {
+            fs.readdirSync(remoteBranchesPath).forEach(branchFile => {
+                const remoteBranchFilePath = path.join(remoteBranchesPath, branchFile);
+                const localBranchFilePath = path.join(localRemoteDir, branchFile);
+
+                fs.copyFileSync(remoteBranchFilePath, localBranchFilePath);
+            });
+        }
+
+        // Fetch new commits only
+        if (!fs.existsSync(localCommitsPath)) {
+            fs.mkdirSync(localCommitsPath, { recursive: true });
+        }
+
+        if (fs.existsSync(remoteCommitsPath)) {
+            fs.readdirSync(remoteCommitsPath).forEach(commitHash => {
+                const remoteCommitPath = path.join(remoteCommitsPath, commitHash);
+                const localCommitPath = path.join(localCommitsPath, commitHash);
+
+                if (!fs.existsSync(localCommitPath)) {
+                    fs.mkdirSync(localCommitPath, { recursive: true });
+
+                    fs.readdirSync(remoteCommitPath).forEach(file => {
+                        fs.copyFileSync(
+                            path.join(remoteCommitPath, file),
+                            path.join(localCommitPath, file)
+                        );
+                    });
+                }
+            });
+        }
+
+        console.log("Fetch successful. Updates are stored in the 'remote' directory.");
+    } catch (err) {
+        console.error("Error fetching from remote repository:", err.message);
+    }
+}
+
 
 //current branch
 function status() {
@@ -639,7 +815,10 @@ switch (args[0]) {
         push(args[1]);
         break;
     case "pull":
-        pull(args[1])    
+        pull(args[1]);    
+        break;
+    case "fetch":
+        fetch(args[1]);
         break;
     case "clone":
         clone(args[1]);
