@@ -24,29 +24,36 @@ function initRepo() {
 
 
 // Stage a file
-function addFile(filename) {
+function addFile(...filenames) {
     try {
         if (!fs.existsSync(CVS_DIR)) {
             console.log("Repository is not initialized");
             return;
         }
 
-        if (!fs.existsSync(filename)) {
-            console.log("File does not exist.");
-            return;
-        }
-
-
-        const content = fs.readFileSync(filename, "utf8");
-        //add in current branch
         const targetBranch = fs.readFileSync(path.join(CVS_DIR, "HEAD"), "utf8").trim();
         const branchPath = path.join(CVS_DIR, "branches", `${targetBranch}.json`);
-        const index = { [filename]: content };
-        fs.writeFileSync(branchPath, JSON.stringify(index, null, 2));
-        console.log(`Staged ${filename}.`);
-    } catch (err) {
-        console.log("No Filename");
 
+        // Read existing staged files
+        let index = {};
+        if (fs.existsSync(branchPath)) {
+            index = JSON.parse(fs.readFileSync(branchPath, "utf8"));
+        }
+
+        filenames.forEach(filename => {
+            if (fs.existsSync(filename)) {
+                const content = fs.readFileSync(filename, "utf8");
+                index[filename] = content;
+                console.log(`Staged ${filename}.`);
+            } else {
+                console.log(`File '${filename}' does not exist.`);
+            }
+        });
+
+        // Update the staging area
+        fs.writeFileSync(branchPath, JSON.stringify(index, null, 2));
+    } catch (err) {
+        console.log("Error adding files:", err);
     }
 }
 
@@ -591,7 +598,7 @@ switch (args[0]) {
         initRepo();
         break;
     case "add":
-        addFile(args[1]);
+        addFile(...args.slice(1));
         break;
     case "commit":
         commit(args.slice(1).join(" "));
