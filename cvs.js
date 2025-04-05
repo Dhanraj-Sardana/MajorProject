@@ -43,7 +43,7 @@ function addFile(...filenames) {
         filenames.forEach(filename => {
             if (fs.existsSync(filename)) {
                 const content = fs.readFileSync(filename, "utf8");
-                index={[filename] : content};
+                index = { [filename]: content };
                 console.log(`Staged ${filename}.`);
             } else {
                 console.log(`File '${filename}' does not exist.`);
@@ -61,60 +61,60 @@ function addFile(...filenames) {
 
 // Commit staged files
 function commit(message) {
-    try{
-    if (!fs.existsSync(CVS_DIR)) {
-        console.log("Repository is not initialized");
-        return;
-    }
-
-    const targetBranch = fs.readFileSync(path.join(CVS_DIR, "HEAD"), "utf8").trim();
-    const branchPath = path.join(CVS_DIR, "branches", `${targetBranch}.json`);
-    const commitHistoryPath = path.join(CVS_DIR, "branches", `${targetBranch}-history.json`);
-
-    if (!fs.existsSync(branchPath)) {
-        console.log("Branch does not exist.");
-        return;
-    }
-
-    const index = JSON.parse(fs.readFileSync(branchPath, "utf8"));
-
-    if (Object.keys(index).length === 0) {
-        console.log("No changes to commit.");
-        return;
-    }
-
-    const commitHash = crypto.createHash("sha1").update(Date.now().toString()).digest("hex").slice(0, 7);
-    const commitDir = path.join(CVS_DIR, "commits", commitHash);
-
-    //Store commit history separately**
-    let commitHistory = [];
     try {
-        if (fs.existsSync(commitHistoryPath)) {
-            commitHistory = JSON.parse(fs.readFileSync(commitHistoryPath, "utf8"));
+        if (!fs.existsSync(CVS_DIR)) {
+            console.log("Repository is not initialized");
+            return;
         }
+
+        const targetBranch = fs.readFileSync(path.join(CVS_DIR, "HEAD"), "utf8").trim();
+        const branchPath = path.join(CVS_DIR, "branches", `${targetBranch}.json`);
+        const commitHistoryPath = path.join(CVS_DIR, "branches", `${targetBranch}-history.json`);
+
+        if (!fs.existsSync(branchPath)) {
+            console.log("Branch does not exist.");
+            return;
+        }
+
+        const index = JSON.parse(fs.readFileSync(branchPath, "utf8"));
+
+        if (Object.keys(index).length === 0) {
+            console.log("No changes to commit.");
+            return;
+        }
+
+        const commitHash = crypto.createHash("sha1").update(Date.now().toString()).digest("hex").slice(0, 7);
+        const commitDir = path.join(CVS_DIR, "commits", commitHash);
+
+        //Store commit history separately**
+        let commitHistory = [];
+        try {
+            if (fs.existsSync(commitHistoryPath)) {
+                commitHistory = JSON.parse(fs.readFileSync(commitHistoryPath, "utf8"));
+            }
+        } catch (err) {
+            commitHistory = [];
+        }
+
+        commitHistory.push(commitHash);
+        fs.writeFileSync(commitHistoryPath, JSON.stringify(commitHistory, null, 2));
+
+        // Create commit directory
+        fs.mkdirSync(commitDir);
+
+        // Save files in the commit directory
+        Object.entries(index).forEach(([file, content]) => {
+            fs.writeFileSync(path.join(commitDir, file), content);
+        });
+
+        // Save commit message
+        fs.writeFileSync(path.join(commitDir, "message.txt"), message);
+
+        // 🛠 **Fix: Do not erase commit history, just clear staging**
+        fs.writeFileSync(branchPath, JSON.stringify({}, null, 2));
+
+        console.log(`Committed with ID ${commitHash}.`);
     } catch (err) {
-        commitHistory = [];
-    }
-
-    commitHistory.push(commitHash);
-    fs.writeFileSync(commitHistoryPath, JSON.stringify(commitHistory, null, 2));
-
-    // Create commit directory
-    fs.mkdirSync(commitDir);
-
-    // Save files in the commit directory
-    Object.entries(index).forEach(([file, content]) => {
-        fs.writeFileSync(path.join(commitDir, file), content);
-    });
-
-    // Save commit message
-    fs.writeFileSync(path.join(commitDir, "message.txt"), message);
-
-    // 🛠 **Fix: Do not erase commit history, just clear staging**
-    fs.writeFileSync(branchPath, JSON.stringify({}, null, 2));
-
-    console.log(`Committed with ID ${commitHash}.`);
-    }catch (err) {
         console.log("Error in commiting :", err.message);
     }
 }
@@ -330,7 +330,7 @@ const mergeBranch = (sourceBranch) => {
         let mergedFiles = {};
         let conflicts = [];
 
-    
+
         // Process source branch files
         sourceState.forEach(file => {
             const sourceFilePath = path.join(sourceCommitPath, file);
@@ -344,7 +344,7 @@ const mergeBranch = (sourceBranch) => {
 
                     if (sourceContent !== targetContent) {
                         // Conflict detected
-                         const conflictFile = `${file}.conflict`;
+                        const conflictFile = `${file}.conflict`;
                         fs.writeFileSync(conflictFile, `<<<<<<< ${sourceBranch}\n${sourceContent}\n=======\n${targetContent}\n>>>>>>> ${targetBranch}`);
                         conflicts.push(file);
                     } else {
@@ -380,12 +380,12 @@ const mergeBranch = (sourceBranch) => {
             fs.writeFileSync(targetStatePath, JSON.stringify(Object.keys(mergedFiles), null, 2));
 
             console.log(`Branch '${sourceBranch}' successfully merged into '${targetBranch}'.`);
-        //....... delete conflict file here
-        fs.readdirSync(".").forEach(file => {
-            if (file.endsWith(".conflict")) {
-                fs.unlinkSync(file); // Delete conflict file
-            }
-        });
+            //....... delete conflict file here
+            fs.readdirSync(".").forEach(file => {
+                if (file.endsWith(".conflict")) {
+                    fs.unlinkSync(file); // Delete conflict file
+                }
+            });
         } else {
             console.log("Merge completed with conflicts in:", conflicts);
             console.log("Resolve the conflicts manually in .conflict files.");
@@ -407,8 +407,8 @@ function push(remotePath) {
             return;
         }
 
-        
-        fs.cpSync(CVS_DIR, path.join(remotePath,CVS_DIR), { recursive: true });
+
+        fs.cpSync(CVS_DIR, path.join(remotePath, CVS_DIR), { recursive: true });
         console.log("Pushed changes to remote repository.");
     } catch (err) {
         console.log("Error pushing:", err.message);
@@ -651,91 +651,117 @@ function revert(commitId) {
         console.log("Error in revert:", err.message);
     }
 }
-
 //Rewrite Commit History
-function rebase(sourceBranch, targetBranch) {
-    try {
-        if (!fs.existsSync(CVS_DIR)) {
-            console.log("Repository is not initialized");
-            return;
-        }
-        const sourcePath = path.join(CVS_DIR, "branches", `${sourceBranch}.json`);
-        const targetPath = path.join(CVS_DIR, "branches", `${targetBranch}.json`);
 
-        if (!fs.existsSync(sourcePath) || !fs.existsSync(targetPath)) {
-            console.log("One or both branches do not exist.");
-            return;
-        }
 
-        const sourceCommits = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
-        const targetCommits = JSON.parse(fs.readFileSync(targetPath, "utf8"));
 
-        // Apply source commits on top of the target branch
-        const rebasedCommits = [...targetCommits, ...sourceCommits];
-
-        fs.writeFileSync(targetPath, JSON.stringify(rebasedCommits, null, 2));
-        console.log(`Rebased branch '${sourceBranch}' onto '${targetBranch}'.`);
-    } catch (err) {
-        console.log("Error in rebase:", err.message);
-    }
+function generateCommitHash() {
+    return crypto.randomBytes(8).toString("hex");
 }
 
-//interactiveRebase
-function interactiveRebase(sourceBranch, targetBranch) {
+function rebase(targetBranch) {
+    const BRANCHES_DIR = path.join(CVS_DIR, "branches");
+    const COMMITS_DIR = path.join(CVS_DIR, "commits");
+    const HEAD_FILE = path.join(CVS_DIR, "HEAD");
     try {
         if (!fs.existsSync(CVS_DIR)) {
-            console.log("Repository is not initialized");
-            return;
-        }
-        const sourcePath = path.join(CVS_DIR, "branches", `${sourceBranch}.json`);
-        const targetPath = path.join(CVS_DIR, "branches", `${targetBranch}.json`);
-
-        if (!fs.existsSync(sourcePath) || !fs.existsSync(targetPath)) {
-            console.log("One or both branches do not exist.");
+            console.log("Repository is not initialized.");
             return;
         }
 
-        let sourceCommits = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
-        const targetCommits = JSON.parse(fs.readFileSync(targetPath, "utf8"));
+        if (!fs.existsSync(HEAD_FILE)) {
+            console.log("HEAD file not found. Unable to rebase.");
+            return;
+        }
 
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
+        const currentBranch = fs.readFileSync(HEAD_FILE, "utf-8").trim();
+        if (currentBranch === targetBranch) {
+            console.log("Already on the target branch. No rebase needed.");
+            return;
+        }
 
-        console.log("Interactive Rebase: Choose an action for each commit.");
+        const sourceHistoryPath = path.join(BRANCHES_DIR, `${currentBranch}-history.json`);
+        const targetHistoryPath = path.join(BRANCHES_DIR, `${targetBranch}-history.json`);
 
-        let newCommits = [];
+        if (!fs.existsSync(sourceHistoryPath) || !fs.existsSync(targetHistoryPath)) {
+            console.log("One of the branch histories is missing.");
+            return;
+        }
 
-        function processCommit(index) {
-            if (index >= sourceCommits.length) {
-                // Rebase complete
-                fs.writeFileSync(targetPath, JSON.stringify([...targetCommits, ...newCommits], null, 2));
-                console.log("Rebase complete!");
-                rl.close();
-                return;
+        const sourceHistory = JSON.parse(fs.readFileSync(sourceHistoryPath, "utf-8"));
+        const targetHistory = JSON.parse(fs.readFileSync(targetHistoryPath, "utf-8"));
+
+        // Find common ancestor
+        let commonAncestorIndex = -1;
+        for (let i = sourceHistory.length - 1; i >= 0; i--) {
+            if (targetHistory.includes(sourceHistory[i])) {
+                commonAncestorIndex = i;
+                break;
+            }
+        }
+
+        if (commonAncestorIndex === -1) {
+            console.log("No common ancestor found. Unable to rebase.");
+            return;
+        }
+
+        const newCommits = sourceHistory.slice(commonAncestorIndex + 1);
+        if (newCommits.length === 0) {
+            console.log("No new commits to rebase.");
+            return;
+        }
+
+        console.log(`Rebasing ${newCommits.length} commits onto ${targetBranch}...`);
+
+        const rebasedCommits = [];
+
+        for (const oldCommit of newCommits) {
+            const oldCommitPath = path.join(COMMITS_DIR, oldCommit);
+            if (!fs.existsSync(oldCommitPath)) {
+                console.log(`Commit ${oldCommit} not found. Skipping.`);
+                continue;
             }
 
-            let commitId = sourceCommits[index];
-            console.log(`Commit ${commitId}`);
-            console.log("Options: (p) Pick, (d) Drop, (e) Edit");
+            const newCommitHash = generateCommitHash();
+            const newCommitPath = path.join(COMMITS_DIR, newCommitHash);
+            fs.mkdirSync(newCommitPath, { recursive: true });
 
-            rl.question("Choose an option: ", (answer) => {
-                if (answer === "p") {
-                    newCommits.push(commitId);
-                } else if (answer === "e") {
-                    console.log(`Editing commit ${commitId}... (manual process)`);
-                    newCommits.push(commitId);
-                } else if (answer === "d") {
-                    console.log(`Dropped commit ${commitId}`);
+            // Copy all files from old commit (except metadata)
+            fs.readdirSync(oldCommitPath).forEach(file => {
+                const src = path.join(oldCommitPath, file);
+                const dest = path.join(newCommitPath, file);
+                fs.copyFileSync(src, dest);
+            });
+
+            rebasedCommits.push(newCommitHash);
+        }
+
+        // Update target branch history
+        const updatedTargetHistory = [...targetHistory, ...rebasedCommits];
+        fs.writeFileSync(targetHistoryPath, JSON.stringify(updatedTargetHistory, null, 2));
+
+        // Move HEAD to targetBranch
+        fs.writeFileSync(HEAD_FILE, targetBranch);
+
+        // Restore deleted files using <targetBranch>-state.json
+        const targetStateFile = path.join(BRANCHES_DIR, `${targetBranch}-state.json`);
+        if (fs.existsSync(targetStateFile)) {
+            const filesToRestore = JSON.parse(fs.readFileSync(targetStateFile, "utf-8"));
+            const latestCommit = rebasedCommits[rebasedCommits.length - 1] || updatedTargetHistory.at(-1);
+            const latestCommitPath = path.join(COMMITS_DIR, latestCommit);
+
+            filesToRestore.forEach(file => {
+                const fileInCommit = path.join(latestCommitPath, file);
+                const restoreTo = path.join(process.cwd(), file);
+                if (fs.existsSync(fileInCommit)) {
+                    fs.copyFileSync(fileInCommit, restoreTo);
                 }
-                processCommit(index + 1);
             });
         }
 
-        processCommit(0);
+        console.log("Rebase completed successfully.");
     } catch (err) {
-        console.log("Error in interactiveRebase:", err.message);
+        console.log(" Error during rebase:", err.message);
     }
 }
 
@@ -816,7 +842,7 @@ switch (args[0]) {
         push(args[1]);
         break;
     case "pull":
-        pull(args[1]);    
+        pull(args[1]);
         break;
     case "fetch":
         fetch(args[1]);
@@ -831,10 +857,7 @@ switch (args[0]) {
         revert(args[1]);
         break;
     case "rebase":
-        rebase(args[1], args[2]);
-        break;
-    case "rebase-interactive":
-        interactiveRebase(args[1], args[2]);
+        rebase(args[1]);
         break;
     case "stash":
         stash();
