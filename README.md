@@ -9,12 +9,17 @@ through a simple CLI, giving you hands-on understanding of how version control w
 ##  Repository Structure
 
 When initialized, a `.mycvs` directory is created containing:
-.mycvs/ ├── HEAD # Tracks the current branch 
-├── branches/ # Stores branch-specific data │
-├── <branch>.json # Staging area for that branch │
-├── <branch>-history.json # Commit history (list of hashes)
-├── <branch>-state.json #  tracks the file snapshot (what files existed last time on this branch — useful for restoring deleted files when switching branches).
-├── commits/ # Folder for each commit │
-└── <commit-hash>/ │ 
-├── message.txt # Commit message │ 
-└── <filename> # Snapshot of committed file
+
+```
+.mycvs/
+├── HEAD                     # Tracks the current branch
+├── branches/                # Stores branch-specific data
+│   ├── <branch>.json           # Staging area for that branch
+│   ├── <branch>-history.json   # Commit history (list of hashes)
+│   └── <branch>-state.json     # Tracks file snapshot (for branch switching recovery)
+├── commits/                # Folder for each commit
+│   └── <commit-hash>/
+│       ├── message.txt         # Commit message
+│       └── <filename>          # Snapshot of committed file
+```
+
