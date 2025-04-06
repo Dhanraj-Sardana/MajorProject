@@ -25,7 +25,7 @@ When initialized, a `.mycvs` directory is created containing:
 
 
 
-# Version Control Command Reference
+## Version Control Command Reference
 
 This is a reference guide for commonly used version control commands.
 
