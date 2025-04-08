@@ -125,6 +125,8 @@ function App() {
     Switch Branch
   </button>
 </div>
+<button onClick={() => run('node ../../backend/cvs.js status', true)} className="bg-pink-700 text-white px-4 py-2 rounded">Status</button>
+
     </div>
   );
 }
