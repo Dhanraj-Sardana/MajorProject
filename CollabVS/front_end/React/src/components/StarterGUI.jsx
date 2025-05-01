@@ -8,6 +8,7 @@ import Branch from './Branch';
 import Commit from './Commit';
 import Add from './Add';
 
+
 export default function StarterGUI() {
   const [output, setOutput] = useState('');
   const [logs, setLogs] = useState([]);
@@ -64,7 +65,7 @@ export default function StarterGUI() {
       </div>
 
       <BasicFunction />
-      <div class="flex justify-center mt-10 ">
+      <div class="flex justify-center mt-15 ">
         <div className=' flex flex-col space-y-4' >
           <button onClick={() => window.electronAPI.openRemoteWindow()} className="bg-gray-500  hover:bg-gray-700 text-white px-4   py-2 rounded " >Remote Operations</button>
           <button onClick={() => moreFunctionsRef.current?.scrollIntoView({ behavior: 'smooth' })} className='bg-gray-500  hover:bg-gray-700 mt-5 text-white px-4  py-2 rounded'>More Functions</button>

@@ -1,5 +1,6 @@
 import React,{useState} from 'react'
 import OutputWindow from './OutputWindow';
+import Stashing from './Stashing';
 export default function BasicFunction() {
   const [logs, setLogs] = useState([]);
   const [output, setOutput] = useState('');
@@ -50,6 +51,7 @@ export default function BasicFunction() {
         <button onClick={() => run('node ../../backend/cvs.js init')} className="bg-gray-500   text-white px-8 hover:bg-gray-800 py-2 rounded">Init</button>
         <button onClick={() => run('node ../../backend/cvs.js status', true)} className="bg-gray-500  hover:bg-gray-700 text-white px-4 py-2 rounded">Status</button>
       </div>
+      <Stashing run={run}/>
     </div>
   )
 }
