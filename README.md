@@ -4,6 +4,7 @@
 and the native **file system module** — no Git dependencies! It provides essential version control operations. It features a modern frontend developed with **React and Vite** for fast, optimized development, styled using **Tailwind CSS**.
 through a simple CLI, giving you hands-on understanding of how version control works under the hood.
 It also includes a GUI interface, enabling developers to manage repositories and version history through an interface
+
 ---
 
 ##  Repository Structure
