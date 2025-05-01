@@ -2,7 +2,7 @@
 
 **CollabVS** (Collaborative Versioning System) is a fully custom version control system built using **Node.js**
 and the native **file system module** — no Git dependencies! It provides essential version control operations. It features a modern frontend developed with **React and Vite** for fast, optimized development, styled using **Tailwind CSS**.
-Used **Electron*** to communicate with native desktop API
+Used **Electron** to communicate with native desktop API
 through a simple CLI, giving you hands-on understanding of how version control works under the hood.
 It also includes a GUI interface, enabling developers to manage repositories and version history through an interface
 
