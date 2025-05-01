@@ -11,7 +11,6 @@ const {clone}=require("./commands/clone");
 const {pull}=require("./commands/pull");
 const {fetch}=require("./commands/fetch");
 const {status}=require("./commands/status");
-const {revert}=require("./commands/revert");
 const {rebase}=require("./commands/rebase");
 const {stash}=require("./commands/stash");
 const {stashPop}=require("./commands/stashpop");
@@ -58,9 +57,6 @@ switch (args[0]) {
         break;
     case "status":
         status();
-        break;
-    case "revert":
-        revert(args[1]);
         break;
     case "rebase":
         rebase(args[1]);
