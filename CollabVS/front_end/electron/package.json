@@ -1,0 +1,10 @@
+{ "main": "main.js",
+"scripts": {
+  "start": "react-scripts start",
+  "electron": "electron .",
+  "dev": "concurrently \"npm start\" \"wait-on http://localhost:5173 && npm run electron\""
+},
+  "devDependencies": {
+    "electron": "^35.1.4"
+  }
+}

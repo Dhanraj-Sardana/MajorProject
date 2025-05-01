@@ -1,0 +1,23 @@
+{
+  "name": "collabvs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
+    "axios": "^1.8.4",
+    "crypto": "^1.0.1",
+    "form-data": "^4.0.2",
+    "fs": "^0.0.1-security",
+    "fs-extra": "^11.3.0",
+    "path": "^0.12.7",
+    "unzipper": "^0.12.3"
+  }
+}
