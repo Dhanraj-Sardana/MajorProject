@@ -38,7 +38,7 @@ function rebase(targetBranch) {
         }
 
         const targetHistory = JSON.parse(fs.readFileSync(targetHistoryPath, "utf-8"));
-        const sourceHistory = JSON.parse(fs.readFileSync(sourceHistoryPath, "utf-8`"));
+        const sourceHistory = JSON.parse(fs.readFileSync(sourceHistoryPath, "utf-8"));
 
         // Find common ancestor
         let commonAncestorIndex = -1;
@@ -54,83 +54,66 @@ function rebase(targetBranch) {
             return;
         }
 
-        const newCommits = sourceHistory.slice(commonAncestorIndex + 1);
-        if (newCommits.length === 0) {
+        const newCommit = sourceHistory[commonAncestorIndex];
+        console.log(newCommit);
+        
+        if (newCommit.length === 0) {
             console.log("No new commits to rebase.");
             return;
         }
 
-        console.log(`ebasing ${newCommits.length} commits from '${currentBranch}' onto '${targetBranch}'...`);
+        console.log(`rebasing ${newCommit} commit from '${currentBranch}' onto '${targetBranch}'...`);
 
-        let rebasedCommits = [];
         let conflictsDetected = false;
 
-        for (const oldCommit of newCommits) {
-            console.log(`Applying commit: ${oldCommit}`);
+            console.log(`Applying commit: ${newCommit}`);
 
-            const oldCommitPath = path.join(COMMITS_DIR, oldCommit);
+            const oldCommitPath = path.join(COMMITS_DIR, newCommit);
             if (!fs.existsSync(oldCommitPath)) {
-                console.log(`Commit ${oldCommit} not found. Skipping.`);
-                continue;
+                console.log(`Commit ${newCommit} not found. Skipping.`);
             }
-
-            const newCommitHash = generateCommitHash();
-            const newCommitPath = path.join(COMMITS_DIR, newCommitHash);
-            fs.mkdirSync(newCommitPath, { recursive: true });
 
             fs.readdirSync(oldCommitPath).forEach(file => {
                 if (file === "message.txt") return;
-
+                let conflicts = [];
                 const sourceFilePath = path.join(oldCommitPath, file);
-                const destFilePath = path.join(newCommitPath, file);
-                const workingFilePath = path.join(process.cwd(), file);
-
-                const sourceContent = fs.readFileSync(sourceFilePath, "utf-8");
-                let targetContent = "";
-
-                if (fs.existsSync(workingFilePath)) {
-                    targetContent = fs.readFileSync(workingFilePath, "utf-8");
-
-                    if (sourceContent !== targetContent) {
+               fs.readdirSync("../../CVS").forEach(File=>{
+                
+                if(file===File){
+                    const sourceFileContent=fs.readFileSync(path.join("../../CVS",File),'utf-8');
+                    const targetFileContent=fs.readFileSync(path.join(oldCommitPath,file),'utf-8');
+                    
+                    if (sourceFileContent !== targetFileContent) {
                         // Conflict detected
                         conflictsDetected = true;
                         console.log(`Conflict detected in file: ${file}`);
 
                         const conflictContent =
-                            `<<<<<<< current version (${targetBranch})\n` +
-                            `${targetContent}\n=======\n${sourceContent}\n>>>>>>> rebased commit\n`;
+                            `<<<<<<< current version (${targetFileContent})\n` +
+                            `${targetFileContent}\n=======\n${sourceFileContent}\n>>>>>>> rebased commit\n`;
 
-                        fs.writeFileSync(workingFilePath, conflictContent, "utf-8");
-                        fs.writeFileSync(destFilePath, conflictContent, "utf-8");
-
-                        console.log(`Manual resolution needed in file: ${file}`);
-                        return;
-                    }
-                }
-
-                // No conflict
-                fs.copyFileSync(sourceFilePath, destFilePath);
-                fs.copyFileSync(sourceFilePath, workingFilePath);
+                            const conflictFile = `${file}.conflict`;
+                            console.log("CONFLICT: CVS/" + conflictFile);
+                            fs.writeFileSync(path.join("../../CVS",conflictFile),conflictContent);
+                            conflicts.push(file);
+                        }
+               }
+            })
+               if (conflicts.length === 0) {
+                        // No conflict
+                        const contents=[];
+                        for (let i =0 ; i < sourceHistory.length ; i++) {
+                            if (targetHistory.includes(sourceHistory[i])) {
+                                contents.push(targetHistory[targetHistory.length-1])
+                                continue;
+                            }
+                            contents.push(sourceHistory[i])
+                        }
+                        fs.writeFileSync(sourceHistoryPath,JSON.stringify(contents, null, 2))
+               }
+            
             });
 
-            // Preserve commit message
-            const messageFile = path.join(oldCommitPath, "message.txt");
-            if (fs.existsSync(messageFile)) {
-                fs.copyFileSync(messageFile, path.join(newCommitPath, "message.txt"));
-            }
-
-            rebasedCommits.push(newCommitHash);
-        }
-
-        if (conflictsDetected) {
-            console.log("Rebase paused due to conflicts. Please resolve them manually and rerun the rebase.");
-            return;
-        }
-
-        // Update target branch history and HEAD
-        const updatedHistory = [...targetHistory, ...rebasedCommits];
-        fs.writeFileSync(targetHistoryPath, JSON.stringify(updatedHistory, null, 2));
-        fs.writeFileSync(HEAD_FILE, targetBranch);
         console.log("Rebase completed successfully.");
     } catch (err) {
         console.log("Error in rebase:", err.message);
