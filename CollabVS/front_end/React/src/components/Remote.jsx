@@ -54,7 +54,7 @@ export default function Remote() {
     run(`node ../../backend/cvs.js checkout ${commitID}`);
   };
   return (
-    <div className="m-0  h-full space-y-4 font-mono bg-[#031B2B]">
+    <div className="min-h-screen m-0 space-y-4 font-mono bg-[#031B2B]">
       <div className='flex items-center gap-20 bg-[#031B2B]'>
         <img className=" w-45 " src="/logo.jpeg" alt="" />
         <h1 className='font-extrabold text-4xl  bg-gradient-to-r from-[#41f478] to-[#3ac15d] text-transparent bg-clip-text'>Collaborative Version Control System</h1>
